@@ -1,0 +1,744 @@
+(* :Name: ChineseCalendar.m *)
+
+(* :Context: ChineseCalendar` *)
+
+(* :Title: Chinese Calendar Computations *)
+
+(* :Author:
+
+Helmer Aslaksen
+Department of Mathematics
+National University of Singapore
+Singapore 117543
+Republic of Singapore
+<aslaksen@math.nus.eud.sg>
+http://www.math.nus.edu.sg/aslaksen/ 
+
+*)
+
+(* :Mathematica Version: 3.0 *)
+
+(* :Package Version: 1.06, Oct. 19, 1999 *)
+
+(* :History:  
+
+1.0,  June  8, 1999: First release. 
+1.01, June 11, 1999: m* and t* functions,
+					 timeToLiChun added.
+1.02, July 12, 1999: majorSolarTermsInYear bug fixed. Missed z1 if it 
+                     coincided with Chinese New Year.
+1.03, July 16, 1999: Redefined MinorSolarTermsInYear to fix bug in the                    
+                     code of Dershowitz and Reingold.
+1.04, Sep. 22, 1999: lengthOfChineseYear,
+					 lengthOfChineseYearsBetween added.
+1.05, Oct.  6, 1999: lengthOfChineseMonthsBetween,
+					 stringsOfChineseMonthsBetween added.
+1.06, Oct. 23, 1999: fullMoonAfter,
+					 chineseFullMoonAfter, 			
+					 timeOfChineseFullMoonAfter,
+					 dayOfChineseFullMoonBetween, 
+					 solsticeYear,
+					 winterSolsticeOnOrBefore,
+					 fakeLeapMonthsBetween,
+					 twoZhongQisBetween, 
+					 twoJieQisBetween,
+					 liChunErrorBetween,
+					 lateLiChunBetween,
+					 z12ErrorBetween added.	
+					 Barchart added to chineseLeapMonthsBetween.
+					 Name changed from ChineseLeapMonths to
+					 ChineseCalendar.
+
+*)
+
+(* :Keywords: Chinese calendar, calendar, leap months, intercalation, 
+    Chinese New Year 
+*)
+    
+(* :Summary: 
+
+ChineseCalendar is a package for performing Chinese calendrical computations.  It is written by Helmer Aslaksen, Department of Mathematics, National University of Singapore, <aslaksen@math.nus.eud.sg>, http://www.math.nus.edu.sg/aslaksen/. It uses the functions written by Nachum Dershowitz and Edward M. Reingold for their book Calendrical Calculations, published by Cambridge University Press, ISBN 0-521-56474-3. Their Lisp functions were translated into the Mathematica package Calendrica by Robert C. McNally <ironwolf@dangerousgames.com>, which is available from their web site http://emr.cs.uiuc.edu/home/reingold/calendar-book/. 
+
+*)
+
+(* :Warnings:
+
+The names of my functions have lower case initials to distinguish them 
+from the functions of Robert C. McNally.
+
+I describe Chinese months by {gYear, cMonth}. I number a Chinese year by the Gregorian year in which it starts. So {1999,12} starts on January 7, 2000. 
+
+*) 
+
+(* :Copyright: Copyright 1999, Helmer Aslaksen *)
+
+(*********************** START OF PUBLIC CODE ***********************)
+
+BeginPackage["ChineseCalendar`",{"Calendrica`","Graphics`Graphics`",
+"Graphics`Common`GraphicsCommon`"}]
+
+ChineseCalendar::usage="ChineseCalendar is a package for performing Chinese calendrical computations. It is written by Helmer Aslaksen, Department of Mathematics, National University of Singapore, <aslaksen@math.nus.eud.sg>, http://www.math.nus.edu.sg/aslaksen/. It uses the functions written by Nachum Dershowitz and Edward M. Reingold for their book Calendrical Calculations, published by Cambridge University Press, ISBN 0-521-56474-3. Their Lisp functions were translated into the Mathematica package Calendrica by Robert C. McNally <ironwolf@dangerousgames.com>, which is available from their web site http://emr.cs.uiuc.edu/home/reingold/calendar-book/.";
+
+nthChineseNewMoonOnOrAfterChineseNewYear::usage= "nthChineseNewMoonOnOrAfterChineseNewYear[gYear, n] gives the fixed date for the nth new moon on or after Chinese New Year in the given Gregorian year.";
+
+nthChineseMonth::usage="nthChineseMonth[gYear, n, leap] gives the Gregorian date for the new moon that starts the nth Chinese month in the Chinese year that starts in the given Gregorian year. If it is a leap month, add an extra variable equal to 1.";
+
+chineseNewMoonsInYear::usage="chineseNewMoonsInYear[gYear] lists the Gregorian dates of the new moons in the Chinese year starting in the given Gregorian year.";
+
+majorSolarTermsInYear::usage="majorSolarTermsInYear[gYear] lists the Gregorian dates of the major solar terms (zhong qi's) in the Chinese year starting in the given Gregorian year.";   
+
+chineseLeapYearQ::usage="chineseLeapYearQ[gYear] returns True if the Chinese year starting in the given Gregorian year is a leap year.";
+
+chineseLeapSolsticeYearQ::usage="chineseLeapSolsticeYearQ[gYear] returns True if the Chinese solstice year (sui) starting in the year before the given Gregorian year has 13 months.";
+
+chineseLeapMonth::usage="chineseLeapMonth[gYear] gives the number of the month that is repeated if the Chinese year starting in the given Gregorian year is a Chinese leap year, and returns nothing if the given Gregorian year is not a Chinese leap year.";
+
+chineseLeapMonthQ::usage="chineseLeapMonthQ[gYear, n] returns True if the nth month of the Chinese year starting in the given Gregorian year has a leap month.";
+
+winterSolstice::usage="winterSolstice[gYear] gives the Gregorian date of the winter solstice of the given Gregorian year.";
+
+z12::usage="z12[gYear] gives the Gregorian date of the 12th zhong qi (major solar term) of the given Gregorian year.";
+
+liChun::usage="liChun[gYear] gives the Gregorian date of the li chun (first minor solar term) of  the given Gregorian year.";
+
+z1::usage="z1[gYear] gives the Gregorian date of the 1st zhong qi (major solar term) of the given Gregorian year.";
+
+z2::usage="z2[gYear] gives the Gregorian date of the 2nd zhong qi (major solar term) of the given Gregorian year.";
+
+chineseNewYearData::usage="chineseNewYearData[gYear] gives the Gregorian date of the astronomical events necessary to determine the Gregorian date of Chinese New Year of the given Gregorian year and any possible leap months for months 11, 12 and 1.";
+
+mChineseNewYear::usage="mtChineseNewYear[gYear] gives the moment (fixed day with fractional part indicating time of day) for ChineseNewYear[gYear].";
+
+tChineseNewYear::usage="tChineseNewYear[gYear] gives the Gregorian day and time for ChineseNewYear[gYear].";
+
+mChineseNewMoonOnOrAfter::usage="mChineseNewMoonOnOrAfter[fDate] gives the moment (fixed day with fractional part indicating time of day) for ChineseNewMoonOnOrAfter[fDate].";
+
+tChineseNewMoonOnOrAfter::usage="tChineseNewMoonOnOrAfter[fDate] gives the Gregorian day and time for ChineseNewMoonOnOrAfter[fDate].";
+
+mChineseDateNextSolarLongitude::usage="mChineseDateNextSolarLongitude[d, l] gives the moment (fixed day with fractional part indicating time of day) for ChineseDateNextSolarLongitude[d, l].";
+
+tChineseDateNextSolarLongitude::usage="tChineseDateNextSolarLongitude[d, l] gives the Gregorian day and time for ChineseDateNextSolarLongitude[d, l].";
+
+mMajorSolarTermOnOrAfter::usage="mMajorSolarTermOnOrAfter[fDate] gives the moment (fixed day with fractional part indicating time of day) for MajorSolarTermOnOrAfter[fDate].";
+
+tMajorSolarTermOnOrAfter::usage="tMajorSolarTermOnOrAfter[fDate] gives the Gregorian day and time for MajorSolarTermOnOrAfter[fDate].";
+
+mMinorSolarTermOnOrAfter::usage="mMinorSolarTermOnOrAfter[fDate] gives the moment (fixed day with fractional part indicating time of day) for MinorSolarTermOnOrAfter[fDate].";
+
+tMinorSolarTermOnOrAfter::usage="tMinorSolarTermOnOrAfter[fDate] gives the Gregorian day and time for MinorSolarTermOnOrAfter[fDate].";
+
+daysToLiChun::usage="daysToLiChun[gYear] gives the number of days between li chun (the first minor solar term) and Chinese New Year of the given Gregorian and the new moons before and after New Year.";
+
+timeToLiChun::usage="timeToLiChun[gYear] gives the time between li chun (the first minor solar term) and Chinese New Year of the given Gregorian and the new moons before and after New Year.";
+
+liChunErrorBetween::usage="liChunErrorBetween[gYear1, gYear2] lists the years between the two given Gregorian years when Chinese New Year was not the new moon closest to li chun (the first minor solar term).";
+
+lateLiChunBetween::usage="lateLiChunBetween[gYear1, gYear2] lists the years between the two given Gregorian years in which the time between the new moon following Chinese New Year and li chun (the first minor solar term) is less than 16 days.";
+
+z12ErrorBetween::usage="z12ErrorBetween[gYear1, gYear2] lists the years between the two given Gregorian years in which the z12 rule fails.";
+
+chineseLeapYearsBetween::usage="chineseLeapYearsBetween[gYear1, gYear2] lists all the Gregorian years between the two given Gregorian years that are Chinese leap years.";
+
+chineseLeapMonthsBetween::usage="chineseLeapMonthsBetween[gYear1, gYear2] lists the Gregorian year and month number for the months that have a leap month between the two given Gregorian years, and the total number of repeats for each month.";
+
+nthChineseLeapMonthsBetween::usage="nthChineseLeapMonthsBetween[gYear1, gYear2, n] counts the number of time the nth month is repeated between the two given Gregorian years.";
+
+chineseNewYearsBetween::usage="chineseNewYearsBetween[gYear1, gYear2] displays the Gregorian dates of Chinese New Year between the two given Gregorian years, and gives a list and a table showing  the number of times Chinese New Year falls on the days between January 20 and February 21 between the two given Gregorian years.";
+
+MinorSolarTermOnOrAfter::usage="This corrects a bug in MinorSolarTermOnOrAfter as defined by Dershowitz and Reingold.";
+
+lengthOfChineseYear::usage="lengthOfChineseYear[gYear] computes the number of days in the Chinese year starting in the given Gregorian year.";
+
+lengthOfChineseYearsBetween::usage="lengthOfChineseYearsBetween[gYear1, gYear2] displays the number of days in the Chinese years between the two given Gregorian years and lists how often the different lengths occur.";
+
+lengthOfChineseMonthsBetween::usage="lengthOfChineseMonthsBetween[fDate1, fDate2] determines if the months between the two given fixed dates are short or long.";
+
+stringsOfChineseMonthsBetween::usage="stringsOfChineseMonthsBetween[fDate1, fDate2] determines if there are strings of 3 short or 4 or 5 long months between the two given fixed dates.";
+
+fullMoonAfter::usage="fullMoonAfter[jd] returns the astronomical (julian) day number of the first full moon after astronomical (julian) day number jd (in Greenwich). The fractional part is the time of day.";
+
+chineseFullMoonAfter::usage="chineseFullMoonAfter[fDate] gives the fixed date for the first Chinese full moon after the given fixed date.";
+
+timeOfChineseFullMoonAfter::usage="timeOfChineseFullMoonAfter[fDate] gives the time for the first Chinese full moon after the given fixed date.";
+
+dayOfChineseFullMoonBetween::usage="dayOfChineseFullMoonBetween[gYear1, gYear2] gives the day of the full moon in the Chinese months between Chinese New Year of the two given Gregorian years.";
+
+solsticeYear::usage="solsticeYear[fDate] gives the Gregorian number of the solstice year containing the given fixed date.";
+
+winterSolsticeOnOrBefore::usage="winterSolsticeOnOrBefore[fDate] gives the fixed date of the winter solstice on the day of or before the given fixed date.";
+
+fakeLeapMonthsBetween::usage="fakeLeapMonthsBetween[gYear1, gYear2] lists the fake leap months (non-leap months without any zhong qi) between Chinese New Year of the two given Gregorian years.";
+
+twoZhongQisBetween::usage="twoZhongQisBetween[gYear1, gYear2] lists the months that contain two zhong qis between Chinese New Year of the two given Gregorian years.";
+
+twoJieQisBetween::usage="twoJieQisBetween[gYear1, gYear2] lists the months that contain two jie qis between Chinese New Year of the two given Gregorian years.";
+
+(**************** START OF PRIVATE CODE ****************)
+
+Begin["`Private`"]
+
+nthChineseNewMoonOnOrAfterChineseNewYear[gYear_, n_]:=
+  Fold[
+    (Calendrica`Private`ChineseNewMoonOnOrAfter[#1+#2])&,
+    Calendrica`Private`ChineseNewYear[gYear],
+    Table[1, {n-1}]
+  ]
+(* This does not take into account a possible leap month *)  
+  
+nthChineseMonth[gYear_, n_, leap_:0]:=
+  Gregorian[
+    If[chineseLeapYearQ[gYear],
+      If[leap == 1, nthChineseNewMoonOnOrAfterChineseNewYear[gYear, n + 1],
+        If[Calendrica`Private`PriorLeapMonthQ[
+             Calendrica`Private`ChineseNewYear[gYear],
+             nthChineseNewMoonOnOrAfterChineseNewYear[gYear, n]
+           ],           
+           nthChineseNewMoonOnOrAfterChineseNewYear[gYear, n + 1],
+           nthChineseNewMoonOnOrAfterChineseNewYear[gYear, n]
+        ]
+      ], 
+      nthChineseNewMoonOnOrAfterChineseNewYear[gYear, n]
+    ]
+  ]
+(* This takes into account a possible leap month *)  
+  
+chineseNewMoonsInYear[gYear_]:=
+  Map[Gregorian,
+    FoldList[
+      (Calendrica`Private`ChineseNewMoonOnOrAfter[#1+#2])&,
+      Calendrica`Private`ChineseNewYear[gYear],
+      Table[1, {If[chineseLeapYearQ[gYear], 12, 11]}]
+    ]      
+  ]
+ 
+majorSolarTermsInYear[gYear_]:=
+  Map[Gregorian,
+    FoldList[
+      (Calendrica`Private`MajorSolarTermOnOrAfter[#1+#2])&,
+      Calendrica`Private`MajorSolarTermOnOrAfter[
+        ToFixed[Gregorian[February[],1,gYear]]],
+      Table[1, {11}]
+    ]      
+  ]
+
+chineseLeapYearQ[gYear_]:=
+  Round[
+    (Calendrica`Private`ChineseNewYear[gYear+1] -   
+     Calendrica`Private`ChineseNewYear[gYear]
+    ) / Calendrica`Private`MeanSynodicMonth[]
+  ] == 13
+
+chineseLeapSolsticeYearQ[gYear_]:=
+  Round[ 
+    (Calendrica`Private`ChineseNewMoonOnOrAfter[
+       Calendrica`Private`MajorSolarTermOnOrAfter[
+         ToFixed[Gregorian[December[],15,gYear]]
+       ] + 1
+     ]
+    -Calendrica`Private`ChineseNewMoonOnOrAfter[
+       Calendrica`Private`MajorSolarTermOnOrAfter[
+         ToFixed[Gregorian[December[],15,gYear-1]]
+       ] + 1
+     ]
+    ) / Calendrica`Private`MeanSynodicMonth[]
+  ] == 13
+  
+chineseLeapMonth[gYear_]:=
+  Module[{i},
+    If[chineseLeapYearQ[gYear],
+      If[chineseLeapSolsticeYearQ[gYear],
+        For[i=2, i<= 11, i++,        
+          If[Calendrica`Private`NoMajorSolarTermQ[
+            nthChineseNewMoonOnOrAfterChineseNewYear[gYear, i]], 
+            Return[i-1]
+          ]
+        ],
+        For[i=12, i<= 13, i++,        
+          If[Calendrica`Private`NoMajorSolarTermQ[
+            nthChineseNewMoonOnOrAfterChineseNewYear[gYear, i]], 
+            Return[i-1]
+          ]
+        ]
+      ]
+    ]
+  ]
+
+chineseLeapMonthQ[gYear_, n_]:=
+  (chineseLeapYearQ[gYear] && 
+    If[n < 11, chineseLeapSolsticeYearQ[gYear], 
+      chineseLeapSolsticeYearQ[gYear + 1]
+    ] &&
+    Calendrica`Private`NoMajorSolarTermQ[
+      nthChineseNewMoonOnOrAfterChineseNewYear[gYear, n + 1]
+    ] && 
+    If[n > 1,!chineseLeapMonthQ[gYear, n - 1],True]
+  )
+
+winterSolstice[gYear_]:=
+  Gregorian[
+    Calendrica`Private`MajorSolarTermOnOrAfter[
+      ToFixed[Gregorian[December[],1,gYear]]
+    ]
+  ]
+
+z12[gYear_]:=
+  Gregorian[
+    Calendrica`Private`MajorSolarTermOnOrAfter[
+      ToFixed[Gregorian[January[],1,gYear]]
+    ]
+  ]
+
+liChun[gYear_]:=
+  Gregorian[
+    Calendrica`Private`MinorSolarTermOnOrAfter[
+      ToFixed[Gregorian[February[],1,gYear]]
+    ]
+  ]
+
+z1[gYear_]:=
+  Gregorian[
+    Calendrica`Private`MajorSolarTermOnOrAfter[
+      ToFixed[Gregorian[February[],1,gYear]]
+    ]
+  ]
+
+z2[gYear_]:=
+  Gregorian[
+    Calendrica`Private`MajorSolarTermOnOrAfter[
+      ToFixed[Gregorian[March[],1,gYear]]
+    ]
+  ]
+
+chineseNewYearData[gYear_]:=
+  (Print["Winter solstice:"winterSolstice[gYear-1]];
+   Print["Month
+   11+:"Gregorian[nthChineseNewMoonOnOrAfterChineseNewYear[gYear-1,12]]];
+   Print["zhong qi 12:"z12[gYear-1]];
+   If[(chineseLeapYearQ[gYear-1] && chineseLeapSolsticeYearQ[gYear]),
+     Print["Month 11++:
+       "Gregorian[nthChineseNewMoonOnOrAfterChineseNewYear[gYear-1,13]]]];
+   Print["Chinese New Year:
+     "Gregorian[nthChineseNewMoonOnOrAfterChineseNewYear[gYear,1]]];
+   Print["Li chun:"liChun[gYear]];  
+   Print["zhong qi 1:"z1[gYear]];
+   Print["Month 1+:"Gregorian[nthChineseNewMoonOnOrAfterChineseNewYear[gYear,2]]];
+   Print["zhong qi 2:"z2[gYear]];
+   Print["Month 1++:"Gregorian[nthChineseNewMoonOnOrAfterChineseNewYear[gYear,3]]]
+  )
+  
+mChineseNewYear[gYear_]:=
+  Module[{s1, s2, m1, m2, m11},
+    s1=Calendrica`Private`MajorSolarTermOnOrAfter[
+      ToFixed[Gregorian[December[], 15, gYear - 1]]];
+    s2=Calendrica`Private`MajorSolarTermOnOrAfter[
+      ToFixed[Gregorian[December[], 15, gYear]]];
+    m1=Calendrica`Private`ChineseNewMoonOnOrAfter[s1 + 1];
+    m2=Calendrica`Private`ChineseNewMoonOnOrAfter[m1 + 1];
+    m11=Calendrica`Private`ChineseNewMoonBefore[s2 + 1];
+    If[Round[(m11 - m1) / Calendrica`Private`MeanSynodicMonth[]] == 12
+    &&
+      (Calendrica`Private`NoMajorSolarTermQ[m1] ||    
+       Calendrica`Private`NoMajorSolarTermQ[m2]
+      ),
+      mChineseNewMoonOnOrAfter[m2 + 1],
+      mChineseNewMoonOnOrAfter[m1 + 1]
+    ]
+  ]
+
+tChineseNewYear[gYear_]:=
+  Print[
+    Gregorian[Floor[mChineseNewYear[gYear]]],
+    TimeOfDay[mChineseNewYear[gYear]]   
+  ]
+            
+mChineseNewMoonOnOrAfter[fDate_]:=
+  N[MomentFromJD[
+    LocalFromUniversal[
+      NewMoonAtOrAfter[
+        UniversalFromLocal[
+          JDFromMoment[fDate],
+          Calendrica`Private`ChineseTimeZone[fDate]
+        ]
+      ],
+      Calendrica`Private`ChineseTimeZone[fDate]
+    ]
+  ],10]
+
+tChineseNewMoonOnOrAfter[fDate_]:=
+  Print[
+    Gregorian[Floor[mChineseNewMoonOnOrAfter[fDate]]],
+    TimeOfDay[mChineseNewMoonOnOrAfter[fDate]]   
+  ]
+
+mChineseDateNextSolarLongitude[d_, l_]:=
+  N[MomentFromJD[
+    LocalFromUniversal[
+      DateNextSolarLongitude[
+        UniversalFromLocal[
+          JDFromMoment[d],
+          Calendrica`Private`ChineseTimeZone[d]
+        ], l
+      ],
+      Calendrica`Private`ChineseTimeZone[d]
+    ]],10
+  ]
+
+tChineseDateNextSolarLongitude[d_, l_]:=
+  Print[
+    Gregorian[Floor[mChineseDateNextSolarLongitude[d, l]]],
+    TimeOfDay[mChineseDateNextSolarLongitude[d, l]] 
+  ]
+
+mMajorSolarTermOnOrAfter[fDate_]:=
+    mChineseDateNextSolarLongitude[fDate, 30]
+
+tMajorSolarTermOnOrAfter[fDate_]:=
+    tChineseDateNextSolarLongitude[fDate, 30]
+
+mMinorSolarTermOnOrAfter[fDate_]:=
+  Module[{d, s},
+    d=Calendrica`Private`ChineseDateNextSolarLongitude[fDate, 15];
+    s=SolarLongitude[
+        UniversalFromLocal[
+          JDFromMoment[d],
+            Calendrica`Private`ChineseTimeZone[d]
+        ]
+      ];    
+    If[Mod[Round[s], 30] == 0, mChineseDateNextSolarLongitude[d+1,
+    15],     
+      mChineseDateNextSolarLongitude[fDate, 15]
+    ]
+  ]
+
+tMinorSolarTermOnOrAfter[fDate_]:=
+  Print[
+    Gregorian[Floor[mMinorSolarTermOnOrAfter[fDate]]],
+    TimeOfDay[mMinorSolarTermOnOrAfter[fDate]]   
+  ]
+
+daysToLiChun[gYear_]:=
+  Module[{C,L,next,last},
+    C=Calendrica`Private`ChineseNewYear[gYear];
+    L=Calendrica`Private`MinorSolarTermOnOrAfter[
+        ToFixed[Gregorian[February[],1,gYear]]];
+    next=Calendrica`Private`ChineseNewMoonOnOrAfter[C+1];
+    last=Calendrica`Private`ChineseNewMoonOnOrAfter[C-35];
+    Print[gYear,": CNY-1 to LC: ",L-last,", CNY to LC: ",Abs[L-C],", 
+      CNY+1 to LC: ",next-L]                    
+  ]
+
+timeToLiChun[gYear_]:=
+  Module[{C,L,next,last},
+    C=mChineseNewYear[gYear];
+    L=mMinorSolarTermOnOrAfter[ToFixed[Gregorian[February[],1,gYear]]]
+    ;
+    next=mChineseNewMoonOnOrAfter[C+1];
+    last=mChineseNewMoonOnOrAfter[C-35];
+    Print[gYear,": CNY-1 to LC: ",L-last,", CNY to LC: ",Abs[L-C],
+      ", CNY+1 to LC: ",next-L]                 
+  ] 
+  
+liChunErrorBetween[gYear1_,gYear2_]:=
+  Module[{C,L,next,last},
+    For[i=gYear1, i<=gYear2, i++,
+		C=mChineseNewYear[i];
+        L=mMinorSolarTermOnOrAfter[ToFixed[Gregorian[February[],1,i]]];
+        next=mChineseNewMoonOnOrAfter[C+1];
+        last=mChineseNewMoonOnOrAfter[C-35];
+		If[Abs[L-C]> L-last || Abs[L-C]> next-L ,
+    	  Print[i,": CNY-1 to LC: ",L-last,", CNY to LC: ",Abs[L-C],
+          ", CNY+1 to LC: ",next-L]                 
+		]
+	]
+  ]   
+  
+lateLiChunBetween[gYear1_,gYear2_]:=
+  Module[{C,L,next,last},
+   For[i=gYear1, i<=gYear2, i++,
+       C=mChineseNewYear[i];
+       L=mMinorSolarTermOnOrAfter[ToFixed[Gregorian[February[],1,i]]];
+       next=mChineseNewMoonOnOrAfter[C+1];
+       last=mChineseNewMoonOnOrAfter[C-35];
+       If[16> next-L ,
+  	     Print[i,": CNY-1 to LC: ",L-last,", CNY to LC: ",Abs[L-C],
+         ", CNY+1 to LC: ",next-L
+		 ]                 
+	   ]
+	 ]
+  ]   
+  
+z12ErrorBetween[gYear1_, gYear2_]:=
+  Module[{z12,m12},
+    For[i=gYear1, i<=gYear2, i++,
+      z12=mMajorSolarTermOnOrAfter[ToFixed[Gregorian[1,1,i]]];
+      m12=mChineseNewMoonOnOrAfter[
+          mMajorSolarTermOnOrAfter[ToFixed[Gregorian[12,1,i-1]]]+1];
+      If[Ceiling[z12]<m12 ,
+  	    Print[i,": Z12: ",
+          Gregorian[Calendrica`Private`MajorSolarTermOnOrAfter[                 	
+		    ToFixed[Gregorian[1,1,i]]]], 
+		  TimeOfDay[mMajorSolarTermOnOrAfter[ToFixed[Gregorian[1,1,i]]]], 
+		  "  M12: ",
+          Gregorian[Calendrica`Private`ChineseNewMoonOnOrAfter[
+            mMajorSolarTermOnOrAfter[ToFixed[Gregorian[12,1,i-1]]]+1]],     			
+    	  TimeOfDay[mChineseNewMoonOnOrAfter[
+            mMajorSolarTermOnOrAfter[ToFixed[Gregorian[12,1,i-1]]]+1]]           
+		]
+	  ]
+	]
+  ]   
+  
+chineseLeapYearsBetween[gYear1_, gYear2_]:=
+  Module[{c=0},
+    For[i=gYear1, i<=gYear2, i++,
+      If[chineseLeapYearQ[i], Print[i]; c++
+      ]
+    ]; Print[c]
+  ]
+
+chineseLeapMonthsBetween[gYear1_, gYear2_]:=
+  Module[{L=Table[0, {12}], M=Table[k, {k, 12}]},
+    For[i=gYear1, i<= gYear2, i++,
+      If[chineseLeapYearQ[i],
+        j=chineseLeapMonth[i];Print[i,":", j];L[[j]]++
+	  ]
+    ];
+	Print[L];
+	BarChart[L, BarOrientation->Horizontal,BarLabels->M, BarSpacing->0.5];
+  ] 
+
+
+
+nthChineseLeapMonthsBetween[gYear1_, gYear2_, n_]:=
+  Module[{c=0},
+    For[i=gYear1, i<=gYear2, i++,
+      If[chineseLeapMonthQ[i, n], Print[i]; c++;
+      ]
+    ]; Print[c]
+  ]
+
+chineseNewYearsBetween[gYear1_, gYear2_]:=
+  Module[{L=Table[0, {33}], M=Table[0, {33}], N=Table[0, {33}]},
+    For[i=gYear1, i<= gYear2, i++,
+      (If[CMonth[Gregorian[Calendrica`Private`ChineseNewYear[i]]]==1,
+         L[[CDay[Gregorian[Calendrica`Private`ChineseNewYear[i]]]-19]]
+         ++,
+         L[[CDay[Gregorian[Calendrica`Private`ChineseNewYear[i]]]+12]]
+         ++
+       ];
+       j=Gregorian[Calendrica`Private`ChineseNewYear[i]]; 
+       Print[i, ":", j]
+      )
+    ];
+    For[k=1,k<=12,k++,
+      M[[k]]=ToString[k+19]<>"/1:"<>ToString[L[[k]]]
+    ];
+    For[k=13,k<=33,k++,
+      M[[k]]=ToString[k-12]<>"/2:"<>ToString[L[[k]]]
+    ];
+    For[k=1,k<=12,k++,
+      N[[k]]=ToString[k+19]<>"/1"
+    ];
+    For[k=13,k<=33,k++,
+      N[[k]]=ToString[k-12]<>"/2"
+    ];
+    Print[M];
+    BarChart[L, BarOrientation->Horizontal, BarLabels->N,
+    BarSpacing->0.3];     
+  ] 
+
+MinorSolarTermOnOrAfter[fDate_] :=
+  Module[{d, s},
+    d = Calendrica`Private`ChineseDateNextSolarLongitude[fDate, 15];
+    s = SolarLongitude[
+          UniversalFromLocal[
+            JDFromMoment[d],
+            Calendrica`Private`ChineseTimeZone[d]
+          ]
+        ];
+    If[Mod[Round[s], 30] == 0,
+      Calendrica`Private`ChineseDateNextSolarLongitude[d + 1, 15],
+      d
+    ]
+  ]
+
+lengthOfChineseYear[gYear_]:=
+  Calendrica`Private`ChineseNewYear[gYear+1]-
+    Calendrica`Private`ChineseNewYear[gYear]
+	
+
+lengthOfChineseYearsBetween[gYear1_, gYear2_]:=
+  Module[{L=Table[0, {7}], M=Table[0, {7}]},
+    For[i=gYear1, i<= gYear2, i++,
+         (Which[
+				lengthOfChineseYear[i]==353,L[[1]]++,
+				lengthOfChineseYear[i]==354,L[[2]]++,
+				lengthOfChineseYear[i]==355,L[[3]]++,
+				lengthOfChineseYear[i]==383,L[[4]]++,
+				lengthOfChineseYear[i]==384,L[[5]]++,
+				lengthOfChineseYear[i]==385,L[[6]]++,
+				True,L[[7]]++
+			  ];
+	      j=lengthOfChineseYear[i]; 
+          Print[i, ":", j]
+         )
+       ];
+  For[k=1,k<=3,k++,
+       M[[k]]=ToString[352+k]<>":"<>ToString[L[[k]]]
+     ];
+  For[k=4,k<=6,k++,
+       M[[k]]=ToString[379+k]<>":"<>ToString[L[[k]]]
+     ];
+  M[[7]]="Exceptions:"<>ToString[L[[7]]];
+ M
+]
+
+lengthOfChineseMonthsBetween[fDate1_, fDate2_]:=
+  Module[{t=fDate1},
+	While[(t=Calendrica`Private`ChineseNewMoonOnOrAfter[t+1])<fDate2,
+      If[(Calendrica`Private`ChineseNewMoonOnOrAfter[t+1]-t)==29,
+		Print["The month starting on ", Gregorian[t], " is short"],
+		Print["The month starting on ", Gregorian[t], " is long"] 
+		]	
+    ]
+  ]
+  
+stringsOfChineseMonthsBetween[fDate1_, fDate2_]:=
+  Module[{s=0,l=0,t=fDate1},
+	While[(t=Calendrica`Private`ChineseNewMoonOnOrAfter[t+1])<fDate2,
+      Which[s==3, Print["THREE SHORT months in a row ending on ",      				
+	  	  				Gregorian[t]],
+            l==4, Print["FOUR LONG months in a row ending on ",
+      				    Gregorian[t]],
+            l==5, Print["FIVE LONG months in a row ending on ",
+      				    Gregorian[t]]
+		   ];
+	  If[(Calendrica`Private`ChineseNewMoonOnOrAfter[t+1]-t)==29,
+		 (l=0; s++), (s=0; l++)
+		]
+    ]							
+  ]
+  
+  
+fullMoonAfter[jd_]:=
+  FullMoonAtOrBefore[FullMoonAtOrBefore[jd]+45]
+
+chineseFullMoonAfter[fDate_]:= 
+  FixedFromJD[
+	LocalFromUniversal[
+      fullMoonAfter[
+		UniversalFromLocal[
+          JDFromMoment[fDate],
+          Calendrica`Private`ChineseTimeZone[fDate]
+		]
+	  ],
+	  Calendrica`Private`ChineseTimeZone[fDate]
+    ]
+  ]  
+  
+
+timeOfChineseFullMoonAfter[fDate_]:= 
+  TimeOfDay[
+    MomentFromJD[
+      LocalFromUniversal[
+		fullMoonAfter[
+          UniversalFromLocal[
+			JDFromMoment[fDate],
+			Calendrica`Private`ChineseTimeZone[fDate]
+		  ]
+		],
+		Calendrica`Private`ChineseTimeZone[fDate]
+	  ]
+	]
+  ]
+
+dayOfChineseFullMoonBetween[gYear1_, gYear2_]:=
+  Module[{d,t=Calendrica`Private`ChineseNewYear[gYear1],
+          t1=Calendrica`Private`ChineseNewYear[gYear2],L=Table[0, {4}], 
+          M=Table[0, {4}]},
+	While[t< t1, 
+	  d=chineseFullMoonAfter[t]-t+1;
+	  If[d==13  || d==18,Print[ERORR!!!!],
+        Print["The full moon falls on the ", d,
+	          "th day of the month starting ", Gregorian[t]
+	    ];
+	    t=Calendrica`Private`ChineseNewMoonOnOrAfter[t+1];
+	    L[[d-13]]++
+	  ]	
+	];
+	For[k=1,k<=4,k++,
+      M[[k]]=ToString[k+13]<>":"<>ToString[L[[k]]]
+    ];
+	Print[M];
+	N[Sum[L[[i]]  (i+13),{i,1,4}]/Sum[L[[i]] ,{i,1,4}]]
+  ]
+
+solsticeYear[fDate_]:=
+  Module[{c=CYear[Gregorian[fDate]],
+          s=Calendrica`Private`MajorSolarTermOnOrAfter[
+              ToFixed[Gregorian[December[],1,CYear[Gregorian[fDate]]]]
+			]},
+    If[fDate< Floor[s], c, c+1
+	  ]
+  ]
+
+winterSolsticeOnOrBefore[fDate_]:=
+  Module[{s0=Calendrica`Private`MajorSolarTermOnOrAfter[
+             ToFixed[Gregorian[December[],1,CYear[Gregorian[fDate]]-1]]],
+  		  s1=Calendrica`Private`MajorSolarTermOnOrAfter[
+             ToFixed[Gregorian[December[],1,CYear[Gregorian[fDate]]]]]},
+    If[fDate< Floor[s1], s0, s1
+ 	  ]
+  ]
+  
+fakeLeapMonthsBetween[gYear1_, gYear2_]:= 
+  Module[{c, t=Calendrica`Private`ChineseNewYear[gYear1],
+			t1=Calendrica`Private`ChineseNewYear[gYear2]},
+	While[t<t1, 
+	  c=solsticeYear[t];
+	  If[Calendrica`Private`NoMajorSolarTermQ[t],
+	    If[chineseLeapSolsticeYearQ[c],               				
+		  If[Calendrica`Private`PriorLeapMonthQ[
+               Calendrica`Private`ChineseNewMoonOnOrAfter[
+                 winterSolsticeOnOrBefore[t]], Calendrica`Private`ChineseNewMoonBefore[t-1]],
+               Print["The month starting ", Gregorian[t],  
+                 " is a fake leap month in a leap sui"]				
+			   ],	
+			   Print["The month starting ", Gregorian[t],  
+                 " is a fake leap month in a non-leap sui"]
+			   ],
+			];
+	  t=Calendrica`Private`ChineseNewMoonOnOrAfter[t+1]
+	]
+  ]
+	
+twoZhongQisBetween[gYear1_, gYear2_]:=
+  Module[{c, t=Calendrica`Private`ChineseNewYear[gYear1],
+            tt=Calendrica`Private`ChineseNewYear[gYear1],
+	  	    t1=Calendrica`Private`ChineseNewYear[gYear2]},
+	While[t<t1,
+	  tt=Calendrica`Private`ChineseNewMoonOnOrAfter[t+1];
+	  If[Floor[
+        Calendrica`Private`MajorSolarTermOnOrAfter[
+          Calendrica`Private`MajorSolarTermOnOrAfter[t]+1]] < tt,
+		Print["Two zhong qis in month starting", Gregorian[t]]
+	  ];
+      t=tt
+	]
+  ]	
+	
+twoJieQisBetween[gYear1_, gYear2_]:=
+  Module[{c, t=Calendrica`Private`ChineseNewYear[gYear1],
+            tt=Calendrica`Private`ChineseNewYear[gYear1],
+		    t1=Calendrica`Private`ChineseNewYear[gYear2]},
+	While[t<t1,tt=Calendrica`Private`ChineseNewMoonOnOrAfter[t+1];
+	  If[Floor[MinorSolarTermOnOrAfter[MinorSolarTermOnOrAfter[t]+25]] < tt,
+		Print["Two jie qi's in month starting", Gregorian[t]]
+	  ];
+      t=tt
+    ]
+  ]
+	
+End[]
+
+EndPackage[]

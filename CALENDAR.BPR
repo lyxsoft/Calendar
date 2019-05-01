@@ -1,0 +1,143 @@
+<?xml version='1.0' encoding='utf-8' ?>
+<!-- C++Builder XML Project -->
+<PROJECT>
+  <MACROS>
+    <VERSION value="BCB.05.03"/>
+    <PROJECT value="Calendar.exe"/>
+    <OBJFILES value="Calendar.obj Main.obj ChsCalendar.obj Festival.obj 
+      ..\COMMON\DateTime\LyxDateTime.obj FestItem.obj ..\COMMON\Chain\Chain.obj 
+      FestShow.obj ChsCode.obj ..\COMMON\About\LyxAbout.obj"/>
+    <RESFILES value="Calendar.res App.res"/>
+    <IDLFILES value=""/>
+    <IDLGENFILES value=""/>
+    <DEFFILE value=""/>
+    <RESDEPEN value="$(RESFILES) Main.dfm Festival.dfm FestShow.dfm ..\COMMON\About\LyxAbout.dfm"/>
+    <LIBFILES value=""/>
+    <LIBRARIES value="vclbde50.lib vcldb50.lib LyxCtrl.lib vcl50.lib"/>
+    <SPARELIBS value="vcl50.lib LyxCtrl.lib vcldb50.lib vclbde50.lib"/>
+    <PACKAGES value="vclx50.bpi vcl50.bpi vcldb50.bpi vclbde50.bpi vcldbx50.bpi bcbsmp50.bpi 
+      dclocx50.bpi qrpt50.bpi teeui50.bpi vclsmp50.bpi teedb50.bpi tee50.bpi 
+      ibsmp50.bpi dss50.bpi nmfast50.bpi inetdb50.bpi inet50.bpi vclmid50.bpi 
+      LyxCtrl.bpi"/>
+    <PATHCPP value=".;..\COMMON\DateTime;..\COMMON\Chain;..\COMMON\About"/>
+    <PATHPAS value=".;"/>
+    <PATHRC value=".;"/>
+    <PATHASM value=".;"/>
+    <DEBUGLIBPATH value="$(BCB)\lib\debug"/>
+    <RELEASELIBPATH value="$(BCB)\lib\release"/>
+    <LINKER value="ilink32"/>
+    <USERDEFINES value=""/>
+    <SYSDEFINES value="NO_STRICT"/>
+    <MAINSOURCE value="Calendar.cpp"/>
+    <INCLUDEPATH value="..\common\about;..\common\chain;..\common\datetime;&quot;d:\program files\devstudio\borland\cbuilder\projects\&quot;;$(BCB)\include;$(BCB)\include\vcl"/>
+    <LIBPATH value="..\common\about;..\common\chain;..\common\datetime;..\common;&quot;d:\program files\devstudio\borland\cbuilder\projects\&quot;;$(BCB)\lib\obj;$(BCB)\lib;$(BCB)\Projects\LIB"/>
+    <WARNINGS value="-w-par -w-8027 -w-8026"/>
+    <WARNOPTSTR value=""/>
+  </MACROS>
+  <OPTIONS>
+    <IDLCFLAGS value="-src_suffix cpp -I..\common\about -I..\common\chain -I..\common\datetime 
+      -I&quot;d:\program files\devstudio\borland\cbuilder\projects\.&quot; 
+      -I$(BCB)\include -I$(BCB)\include\vcl -boa"/>
+    <CFLAG1 value="-O2 -H=c:\PROGRA~1\DEVSTU~1\BORLAND\CBUILD~2\lib\vcl35.csm -Vx -Ve 
+      -Tkh30000 -X- -a8 -b- -d -k- -vi -c -tW -tWM"/>
+    <CFLAG2 value=""/>
+    <CFLAG3 value=""/>
+    <PFLAGS value="-$Y- -$L- -$D- -v -M -JPHNE"/>
+    <RFLAGS value=""/>
+    <AFLAGS value="/mx /w2 /zn"/>
+    <LFLAGS value="-D&quot;&quot; -aa -Tpe -x -Gn"/>
+    <IFLAGS value=""/>
+  </OPTIONS>
+  <LINKER>
+    <ALLOBJ value="c0w32.obj sysinit.obj $(OBJFILES)"/>
+    <ALLRES value="$(RESFILES)"/>
+    <ALLLIB value="$(LIBFILES) $(LIBRARIES) import32.lib cp32mt.lib"/>
+  </LINKER>
+  <IDEOPTIONS>
+[Version Info]
+IncludeVerInfo=1
+AutoIncBuild=0
+MajorVer=1
+MinorVer=0
+Release=2
+Build=0
+Debug=0
+PreRelease=0
+Special=0
+Private=0
+DLL=0
+Locale=2052
+CodePage=936
+
+[Version Info Keys]
+CompanyName=LyxSoft Software Inc.
+FileDescription=LyxSoft 日历
+FileVersion=1.0.2.0
+InternalName=CALENDAR.EXE
+LegalCopyright=LyxSoft Software Inc. 2000
+LegalTrademarks=LyxSoft
+OriginalFilename=CALENDAR.EXE
+ProductName=LyxSoft Calendar
+ProductVersion=1.0.2.0
+Comments=
+
+[HistoryLists\hlIncludePath]
+Count=6
+Item0=..\common\about;..\common\chain;..\common\datetime;d:\program files\devstudio\borland\cbuilder\projects\;$(BCB)\include;$(BCB)\include\vcl
+Item1=..\common\about;..\common\chain;..\common\datetime;d:\program files\devstudio\borland\cbuilder\projects;$(BCB)\include;$(BCB)\include\vcl
+Item2=..\common\chain;..\common\datetime;d:\program files\devstudio\borland\cbuilder\projects;$(BCB)\include;$(BCB)\include\vcl
+Item3=..\common\datetime;d:\program files\devstudio\borland\cbuilder\projects;$(BCB)\include;$(BCB)\include\vcl
+Item4=d:\program files\devstudio\borland\cbuilder\projects;$(BCB)\include;$(BCB)\include\vcl
+Item5=$(BCB)\include;$(BCB)\include\vcl
+
+[HistoryLists\hlLibraryPath]
+Count=8
+Item0=..\common\about;..\common\chain;..\common\datetime;..\common;d:\program files\devstudio\borland\cbuilder\projects\;$(BCB)\lib\obj;$(BCB)\lib;$(BCB)\Projects\LIB
+Item1=..\common\about;..\common\chain;..\common\datetime;..\common;d:\program files\devstudio\borland\cbuilder\projects;$(BCB)\lib\obj;$(BCB)\lib;$(BCB)\Projects\LIB
+Item2=..\common\about;..\common\chain;..\common\datetime;..\common;d:\program files\devstudio\borland\cbuilder\projects;$(BCB)\lib\obj;$(BCB)\lib
+Item3=..\common\chain;..\common\datetime;..\common;d:\program files\devstudio\borland\cbuilder\projects;$(BCB)\lib\obj;$(BCB)\lib
+Item4=..\common\datetime;..\common;d:\program files\devstudio\borland\cbuilder\projects;$(BCB)\lib\obj;$(BCB)\lib
+Item5=..\common;d:\program files\devstudio\borland\cbuilder\projects;$(BCB)\lib\obj;$(BCB)\lib
+Item6=d:\program files\devstudio\borland\cbuilder\projects;$(BCB)\lib\obj;$(BCB)\lib
+Item7=$(BCB)\lib\obj;$(BCB)\lib
+
+[HistoryLists\hlDebugSourcePath]
+Count=1
+Item0=$(BCB)\source\vcl
+
+[HistoryLists\hlConditionals]
+Count=1
+Item0=_RTLDLL;USEPACKAGES
+
+[HistoryLists\hlRunParameters]
+Count=3
+Item0=-auto
+Item1=/auto
+Item2=bauto
+
+[Debugging]
+DebugSourceDirs=$(BCB)\source\vcl
+
+[Parameters]
+RunParams=-auto
+HostApplication=
+RemoteHost=
+RemotePath=
+RemoteDebug=0
+
+[Compiler]
+ShowInfoMsgs=0
+LinkDebugVcl=0
+LinkCGLIB=0
+
+[CORBA]
+AddServerUnit=1
+AddClientUnit=1
+PrecompiledHeaders=1
+
+[Language]
+ActiveLang=
+ProjectLang=
+RootDir=
+  </IDEOPTIONS>
+</PROJECT>
